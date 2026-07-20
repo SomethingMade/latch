@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Latch — Verification Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Michroma&family=SF+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-base:#000; --bg-surface:#0a0a0a; --bg-alt:#0f0f0f;
+    --border:#222; --text-primary:#fff; --text-secondary:#8a8a8a;
+    --accent:#0A84FF; --accent-dim:rgba(10,132,255,.14);
+    --ok:#22c55e; --ok-dim:rgba(34,197,94,.14);
+    --warn:#f5a524; --warn-dim:rgba(245,165,36,.14);
+    --bad:#ef4444; --bad-dim:rgba(239,68,68,.14);
+    --mono:'SF Mono','Courier New',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',-apple-system,sans-serif;}
+  body{background:var(--bg-base);color:var(--text-primary);min-height:100vh;}
+  a{color:inherit;}
+
+  /* ---------- Sign-in ---------- */
+  #signin{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  .signin-card{
+    width:100%;max-width:360px;border:1px solid var(--border);
+    background:var(--bg-surface);border-radius:14px;padding:32px 28px;
+  }
+  .brand{
+    font-family:'Michroma',sans-serif;font-size:15px;letter-spacing:1.5px;
+    display:flex;align-items:center;gap:10px;margin-bottom:6px;
+  }
+  .brand .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 8px var(--accent);}
+  .signin-sub{color:var(--text-secondary);font-size:13px;margin-bottom:26px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:11.5px;color:var(--text-secondary);
+    margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:600;}
+  .field input{
+    width:100%;background:var(--bg-alt);border:1px solid var(--border);
+    color:var(--text-primary);padding:10px 12px;border-radius:8px;font-size:14px;
+    outline:none;transition:border-color .15s;
+  }
+  .field input:focus{border-color:var(--accent);}
+  .btn{
+    width:100%;padding:11px;border-radius:8px;border:1px solid var(--border);
+    background:var(--text-primary);color:#000;font-weight:600;font-size:13.5px;
+    cursor:pointer;transition:opacity .15s;
+  }
+  .btn:hover{opacity:.88;}
+  .btn.secondary{background:transparent;color:var(--text-primary);margin-top:8px;}
+  .btn.accent{background:var(--accent);color:#fff;}
+  .divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--text-secondary);font-size:11px;}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+  #signin-error{color:var(--bad);font-size:12.5px;margin-top:12px;min-height:16px;}
+
+  /* ---------- Dashboard shell ---------- */
+  #app{display:none;min-height:100vh;}
+  header{
+    position:sticky;top:0;z-index:10;background:rgba(0,0,0,.9);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--border);
+  }
+  .header-row{
+    max-width:1100px;margin:0 auto;padding:16px 24px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .header-actions{display:flex;align-items:center;gap:12px;}
+  .icon-btn{
+    background:transparent;border:1px solid var(--border);color:var(--text-secondary);
+    padding:8px 14px;border-radius:8px;font-size:12.5px;cursor:pointer;font-weight:600;
+  }
+  .icon-btn:hover{color:var(--text-primary);border-color:#444;}
+
+  main{max-width:1100px;margin:0 auto;padding:32px 24px 80px;}
+  .page-title{font-size:22px;font-weight:700;margin-bottom:4px;}
+  .page-sub{color:var(--text-secondary);font-size:13.5px;margin-bottom:28px;}
+
+  .stat-row{display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap;}
+  .stat{
+    flex:1;min-width:120px;border:1px solid var(--border);background:var(--bg-surface);
+    border-radius:12px;padding:16px 18px;
+  }
+  .stat .n{font-size:24px;font-weight:700;font-family:var(--mono);}
+  .stat .l{font-size:11.5px;color:var(--text-secondary);text-transform:uppercase;
+    letter-spacing:.6px;margin-top:4px;font-weight:600;}
+
+  .panel{
+    border:1px solid var(--border);background:var(--bg-surface);border-radius:14px;overflow:hidden;
+  }
+  .panel-head{
+    padding:16px 20px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .panel-head h2{font-size:14.5px;font-weight:700;}
+
+  table{width:100%;border-collapse:collapse;}
+  th{
+    text-align:left;font-size:11px;color:var(--text-secondary);text-transform:uppercase;
+    letter-spacing:.6px;padding:12px 20px;border-bottom:1px solid var(--border);font-weight:600;
+  }
+  td{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13.5px;}
+  tr:last-child td{border-bottom:none;}
+  tr.row{cursor:pointer;transition:background .1s;}
+  tr.row:hover{background:var(--bg-alt);}
+  .mono{font-family:var(--mono);font-size:12.5px;color:var(--text-secondary);}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;
+    font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+  }
+  .badge .d{width:6px;height:6px;border-radius:50%;}
+  .badge.approved{background:var(--ok-dim);color:var(--ok);}
+  .badge.approved .d{background:var(--ok);}
+  .badge.declined{background:var(--bad-dim);color:var(--bad);}
+  .badge.declined .d{background:var(--bad);}
+  .badge.review, .badge.inprogress{background:var(--warn-dim);color:var(--warn);}
+  .badge.review .d, .badge.inprogress .d{background:var(--warn);}
+  .badge.notstarted{background:rgba(255,255,255,.06);color:var(--text-secondary);}
+  .badge.notstarted .d{background:var(--text-secondary);}
+
+  .empty{padding:60px 20px;text-align:center;color:var(--text-secondary);font-size:13.5px;}
+
+  /* New verification modal */
+  .overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+    align-items:center;justify-content:center;z-index:100;padding:20px;
+  }
+  .overlay.active{display:flex;}
+  .modal{
+    width:100%;max-width:400px;background:var(--bg-surface);border:1px solid var(--border);
+    border-radius:14px;padding:26px;
+  }
+  .modal h3{font-size:16px;margin-bottom:6px;}
+  .modal p.hint{color:var(--text-secondary);font-size:12.5px;margin-bottom:18px;}
+  .modal-actions{display:flex;gap:10px;margin-top:20px;}
+  .modal-actions .btn{width:auto;flex:1;}
+
+  /* Detail drawer */
+  #drawer{
+    display:none;position:fixed;top:0;right:0;bottom:0;width:100%;max-width:420px;
+    background:var(--bg-surface);border-left:1px solid var(--border);z-index:90;
+    overflow-y:auto;padding:24px;
+  }
+  #drawer.active{display:block;}
+  #drawer-close{background:none;border:none;color:var(--text-secondary);font-size:20px;
+    cursor:pointer;float:right;}
+  #drawer h3{font-size:16px;margin:6px 0 2px;}
+  .kv{margin-top:20px;}
+  .kv-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);
+    font-size:13px;gap:12px;}
+  .kv-row .k{color:var(--text-secondary);}
+  .kv-row .v{text-align:right;font-family:var(--mono);font-size:12.5px;word-break:break-word;}
+  pre.raw{
+    background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;
+    padding:12px;font-size:11px;color:var(--text-secondary);overflow-x:auto;margin-top:18px;
+    max-height:280px;
+  }
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:#fff;color:#000;padding:11px 18px;border-radius:30px;font-size:13px;
+    font-weight:600;z-index:200;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= SIGN IN ================= -->
+<div id="signin">
+  <div class="signin-card">
+    <div class="brand"><span class="dot"></span>LATCH</div>
+    <div class="signin-sub">Compliance dashboard — admin access only</div>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="email" autocomplete="username" placeholder="you@vynix.com">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <button class="btn" id="btn-signin">Sign in</button>
+
+    <div class="divider">OR</div>
+    <button class="btn secondary" id="btn-google">Continue with Google</button>
+
+    <div id="signin-error"></div>
+  </div>
+</div>
+
+<!-- ================= DASHBOARD ================= -->
+<div id="app">
+  <header>
+    <div class="header-row">
+      <div class="brand"><span class="dot"></span>LATCH</div>
+      <div class="header-actions">
+        <span class="mono" id="who"></span>
+        <button class="icon-btn" id="btn-signout">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-title">Verifications</div>
+    <div class="page-sub">Live status from Didit — every row below is a real session.</div>
+
+    <div class="stat-row">
+      <div class="stat"><div class="n" id="stat-total">0</div><div class="l">Total</div></div>
+      <div class="stat"><div class="n" id="stat-approved">0</div><div class="l">Approved</div></div>
+      <div class="stat"><div class="n" id="stat-review">0</div><div class="l">In review</div></div>
+      <div class="stat"><div class="n" id="stat-declined">0</div><div class="l">Declined</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Sessions</h2>
+        <button class="btn accent" style="width:auto;padding:9px 16px;" id="btn-new">
+          + New verification
+        </button>
+      </div>
+      <div id="table-wrap">
+        <table id="table">
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Status</th>
+              <th>Session</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="empty" id="empty" style="display:none;">
+          No verifications yet — start one to see it appear here in real time.
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- New verification modal -->
+<div class="overlay" id="new-overlay">
+  <div class="modal">
+    <h3>Start a verification</h3>
+    <p class="hint">Creates a real Didit session and opens the hosted verification flow in a new tab. Status updates here automatically once the user finishes.</p>
+    <div class="field">
+      <label>Label (e.g. user email or ID)</label>
+      <input type="text" id="new-label" placeholder="e.g. jane@company.com">
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="new-cancel">Cancel</button>
+      <button class="btn accent" id="new-start">Start</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail drawer -->
+<div id="drawer">
+  <button id="drawer-close">✕</button>
+  <div style="clear:both;"></div>
+  <span class="mono" id="drawer-id"></span>
+  <h3 id="drawer-label"></h3>
+  <div id="drawer-badge"></div>
+  <div class="kv" id="drawer-kv"></div>
+  <pre class="raw" id="drawer-raw"></pre>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+  signInWithPopup, GoogleAuthProvider, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, collection, doc, getDoc, query, orderBy, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getFunctions, httpsCallable
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+
+// ---- Fill in with your Firebase project config ----
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const functions = getFunctions(app);
+const createVerificationSession = httpsCallable(functions, "createVerificationSession");
+
+let sessionsCache = {};
+let unsubscribe = null;
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  setTimeout(() => (t.style.display = "none"), 3200);
+}
+
+function statusClass(status) {
+  const s = (status || "").toLowerCase().replace(/\s+/g, "");
+  if (s === "approved") return "approved";
+  if (s === "declined") return "declined";
+  if (s === "inreview") return "review";
+  if (s === "inprogress") return "inprogress";
+  return "notstarted";
+}
+
+function fmtTime(ts) {
+  if (!ts) return "—";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString();
+}
+
+function renderTable() {
+  const tbody = document.getElementById("tbody");
+  const empty = document.getElementById("empty");
+  const rows = Object.values(sessionsCache).sort((a, b) => {
+    const at = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+    const bt = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+    return bt - at;
+  });
+
+  document.getElementById("stat-total").textContent = rows.length;
+  document.getElementById("stat-approved").textContent =
+    rows.filter(r => statusClass(r.status) === "approved").length;
+  document.getElementById("stat-review").textContent =
+    rows.filter(r => ["review", "inprogress"].includes(statusClass(r.status))).length;
+  document.getElementById("stat-declined").textContent =
+    rows.filter(r => statusClass(r.status) === "declined").length;
+
+  if (!rows.length) {
+    tbody.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+
+  tbody.innerHTML = rows.map(r => {
+    const cls = statusClass(r.status);
+    return `<tr class="row" data-id="${r.sessionId}">
+      <td>${r.label || "—"}</td>
+      <td><span class="badge ${cls}"><span class="d"></span>${r.status || "Unknown"}</span></td>
+      <td class="mono">${(r.sessionId || "").slice(0, 8)}…</td>
+      <td class="mono">${fmtTime(r.updatedAt)}</td>
+    </tr>`;
+  }).join("");
+
+  tbody.querySelectorAll("tr.row").forEach(tr => {
+    tr.addEventListener("click", () => openDrawer(tr.dataset.id));
+  });
+}
+
+function openDrawer(sessionId) {
+  const r = sessionsCache[sessionId];
+  if (!r) return;
+  document.getElementById("drawer-id").textContent = sessionId;
+  document.getElementById("drawer-label").textContent = r.label || "Untitled";
+  const cls = statusClass(r.status);
+  document.getElementById("drawer-badge").innerHTML =
+    `<span class="badge ${cls}"><span class="d"></span>${r.status || "Unknown"}</span>`;
+
+  document.getElementById("drawer-kv").innerHTML = `
+    <div class="kv-row"><span class="k">Session</span><span class="v">${sessionId}</span></div>
+    <div class="kv-row"><span class="k">Created</span><span class="v">${fmtTime(r.createdAt)}</span></div>
+    <div class="kv-row"><span class="k">Updated</span><span class="v">${fmtTime(r.updatedAt)}</span></div>
+  `;
+  document.getElementById("drawer-raw").textContent =
+    r.decision ? JSON.stringify(r.decision, null, 2) : "No decision data yet.";
+  document.getElementById("drawer").classList.add("active");
+}
+document.getElementById("drawer-close").addEventListener("click", () => {
+  document.getElementById("drawer").classList.remove("active");
+});
+
+function listenToSessions() {
+  const q = query(collection(db, "verifications"), orderBy("createdAt", "desc"));
+  unsubscribe = onSnapshot(q, snap => {
+    snap.docChanges().forEach(change => {
+      const data = change.doc.data();
+      if (change.type === "removed") {
+        delete sessionsCache[change.doc.id];
+      } else {
+        sessionsCache[change.doc.id] = data;
+      }
+    });
+    renderTable();
+  }, err => {
+    console.error(err);
+    showToast("Could not load sessions — check Firestore rules / admin access.");
+  });
+}
+
+// ---- New verification modal ----
+document.getElementById("btn-new").addEventListener("click", () => {
+  document.getElementById("new-label").value = "";
+  document.getElementById("new-overlay").classList.add("active");
+});
+document.getElementById("new-cancel").addEventListener("click", () => {
+  document.getElementById("new-overlay").classList.remove("active");
+});
+document.getElementById("new-start").addEventListener("click", async () => {
+  const label = document.getElementById("new-label").value.trim();
+  const btn = document.getElementById("new-start");
+  btn.disabled = true;
+  btn.textContent = "Starting…";
+  try {
+    const res = await createVerificationSession({ label });
+    document.getElementById("new-overlay").classList.remove("active");
+    showToast("Verification session created");
+    window.open(res.data.url, "_blank");
+  } catch (e) {
+    console.error(e);
+    showToast(e.message || "Could not start verification");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Start";
+  }
+});
+
+// ---- Auth ----
+document.getElementById("btn-signin").addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const errEl = document.getElementById("signin-error");
+  errEl.textContent = "";
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (e) {
+    errEl.textContent = "Sign-in failed. Check your email and password.";
+  }
+});
+
+document.getElementById("btn-google").addEventListener("click", async () => {
+  const errEl = document.getElementById("signin-error");
+  errEl.textContent = "";
+  try {
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch (e) {
+    errEl.textContent = "Google sign-in failed.";
+  }
+});
+
+document.getElementById("btn-signout").addEventListener("click", () => signOut(auth));
+
+onAuthStateChanged(auth, async (user) => {
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  sessionsCache = {};
+
+  if (!user) {
+    document.getElementById("signin").style.display = "flex";
+    document.getElementById("app").style.display = "none";
+    return;
+  }
+
+  // Confirm this user is on the admins allowlist before showing anything.
+  const adminSnap = await getDoc(doc(db, "admins", user.uid));
+  if (!adminSnap.exists()) {
+    document.getElementById("signin-error").textContent =
+      "This account isn't an authorized admin.";
+    await signOut(auth);
+    return;
+  }
+
+  document.getElementById("signin").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  document.getElementById("who").textContent = user.email || user.uid;
+  listenToSessions();
+});
+</script>
+</body>
+</html>
