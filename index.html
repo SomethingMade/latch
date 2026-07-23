@@ -1,483 +1,451 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Latch — Verification Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Michroma&family=SF+Mono&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Latch — Verification Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg-base:#000; --bg-surface:#0a0a0a; --bg-alt:#0f0f0f;
-    --border:#222; --text-primary:#fff; --text-secondary:#8a8a8a;
-    --accent:#0A84FF; --accent-dim:rgba(10,132,255,.14);
-    --ok:#22c55e; --ok-dim:rgba(34,197,94,.14);
-    --warn:#f5a524; --warn-dim:rgba(245,165,36,.14);
-    --bad:#ef4444; --bad-dim:rgba(239,68,68,.14);
-    --mono:'SF Mono','Courier New',monospace;
+    --ink:#0B0D0F;
+    --panel:#12151A;
+    --panel-2:#171B21;
+    --line:#252A31;
+    --line-soft:#1C2027;
+    --text:#E9EDEF;
+    --text-dim:#8B939E;
+    --text-faint:#565E68;
+    --accent:#3DDC97;      /* verified green — the one accent */
+    --accent-dim:#1E4F3B;
+    --warn:#F5B942;
+    --danger:#F0665B;
+    --info:#5B9CF5;
+    --radius:10px;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',sans-serif;
   }
-  *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',-apple-system,sans-serif;}
-  body{background:var(--bg-base);color:var(--text-primary);min-height:100vh;}
-  a{color:inherit;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ink);color:var(--text);font-family:var(--body);-webkit-font-smoothing:antialiased;}
+  ::selection{background:var(--accent-dim);color:var(--accent);}
 
-  /* ---------- Sign-in ---------- */
-  #signin{
-    min-height:100vh;display:flex;align-items:center;justify-content:center;
-    padding:24px;
-  }
-  .signin-card{
-    width:100%;max-width:360px;border:1px solid var(--border);
-    background:var(--bg-surface);border-radius:14px;padding:32px 28px;
-  }
-  .brand{
-    font-family:'Michroma',sans-serif;font-size:15px;letter-spacing:1.5px;
-    display:flex;align-items:center;gap:10px;margin-bottom:6px;
-  }
-  .brand .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
-    box-shadow:0 0 8px var(--accent);}
-  .signin-sub{color:var(--text-secondary);font-size:13px;margin-bottom:26px;}
-  .field{margin-bottom:14px;}
-  .field label{display:block;font-size:11.5px;color:var(--text-secondary);
-    margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:600;}
-  .field input{
-    width:100%;background:var(--bg-alt);border:1px solid var(--border);
-    color:var(--text-primary);padding:10px 12px;border-radius:8px;font-size:14px;
-    outline:none;transition:border-color .15s;
-  }
-  .field input:focus{border-color:var(--accent);}
-  .btn{
-    width:100%;padding:11px;border-radius:8px;border:1px solid var(--border);
-    background:var(--text-primary);color:#000;font-weight:600;font-size:13.5px;
-    cursor:pointer;transition:opacity .15s;
-  }
-  .btn:hover{opacity:.88;}
-  .btn.secondary{background:transparent;color:var(--text-primary);margin-top:8px;}
-  .btn.accent{background:var(--accent);color:#fff;}
-  .divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--text-secondary);font-size:11px;}
-  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
-  #signin-error{color:var(--bad);font-size:12.5px;margin-top:12px;min-height:16px;}
+  /* ---------- Shell ---------- */
+  #app{display:none;min-height:100vh;grid-template-columns:220px 1fr;}
+  #app.ready{display:grid;}
 
-  /* ---------- Dashboard shell ---------- */
-  #app{display:none;min-height:100vh;}
-  header{
-    position:sticky;top:0;z-index:10;background:rgba(0,0,0,.9);
-    backdrop-filter:blur(10px);border-bottom:1px solid var(--border);
-  }
-  .header-row{
-    max-width:1100px;margin:0 auto;padding:16px 24px;
-    display:flex;align-items:center;justify-content:space-between;
-  }
-  .header-actions{display:flex;align-items:center;gap:12px;}
-  .icon-btn{
-    background:transparent;border:1px solid var(--border);color:var(--text-secondary);
-    padding:8px 14px;border-radius:8px;font-size:12.5px;cursor:pointer;font-weight:600;
-  }
-  .icon-btn:hover{color:var(--text-primary);border-color:#444;}
+  .side{border-right:1px solid var(--line);padding:24px 18px;display:flex;flex-direction:column;gap:28px;}
+  .brand{display:flex;align-items:center;gap:9px;}
+  .brand .mark{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#1a8c5f);flex:none;}
+  .brand span{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:.2px;}
+  .side nav{display:flex;flex-direction:column;gap:2px;}
+  .side nav button{all:unset;cursor:pointer;padding:9px 10px;border-radius:8px;font-size:13.5px;color:var(--text-dim);display:flex;justify-content:space-between;align-items:center;}
+  .side nav button:hover{background:var(--panel);color:var(--text);}
+  .side nav button.active{background:var(--panel-2);color:var(--text);}
+  .side nav button .count{font-family:var(--mono);font-size:11px;color:var(--text-faint);}
+  .side nav button.active .count{color:var(--text-dim);}
+  .side-foot{margin-top:auto;font-size:12px;color:var(--text-faint);display:flex;flex-direction:column;gap:8px;}
+  .side-foot button{all:unset;cursor:pointer;color:var(--text-faint);font-size:12px;}
+  .side-foot button:hover{color:var(--text-dim);}
 
-  main{max-width:1100px;margin:0 auto;padding:32px 24px 80px;}
-  .page-title{font-size:22px;font-weight:700;margin-bottom:4px;}
-  .page-sub{color:var(--text-secondary);font-size:13.5px;margin-bottom:28px;}
+  main{padding:28px 34px;overflow-y:auto;height:100vh;}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;gap:16px;}
+  .topbar h1{font-family:var(--display);font-size:21px;margin:0 0 4px;}
+  .topbar p{margin:0;color:var(--text-dim);font-size:13px;}
+  .btn{all:unset;cursor:pointer;font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px;font-family:var(--body);}
+  .btn-primary{background:var(--accent);color:#06251A;}
+  .btn-primary:hover{background:#4fe6a6;}
+  .btn-ghost{border:1px solid var(--line);color:var(--text-dim);}
+  .btn-ghost:hover{color:var(--text);border-color:#3a4048;}
 
-  .stat-row{display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap;}
-  .stat{
-    flex:1;min-width:120px;border:1px solid var(--border);background:var(--bg-surface);
-    border-radius:12px;padding:16px 18px;
-  }
-  .stat .n{font-size:24px;font-weight:700;font-family:var(--mono);}
-  .stat .l{font-size:11.5px;color:var(--text-secondary);text-transform:uppercase;
-    letter-spacing:.6px;margin-top:4px;font-weight:600;}
-
-  .panel{
-    border:1px solid var(--border);background:var(--bg-surface);border-radius:14px;overflow:hidden;
-  }
-  .panel-head{
-    padding:16px 20px;border-bottom:1px solid var(--border);
-    display:flex;align-items:center;justify-content:space-between;
-  }
-  .panel-head h2{font-size:14.5px;font-weight:700;}
-
+  /* ---------- Table ---------- */
+  .table-wrap{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--panel);}
   table{width:100%;border-collapse:collapse;}
-  th{
-    text-align:left;font-size:11px;color:var(--text-secondary);text-transform:uppercase;
-    letter-spacing:.6px;padding:12px 20px;border-bottom:1px solid var(--border);font-weight:600;
-  }
-  td{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13.5px;}
-  tr:last-child td{border-bottom:none;}
-  tr.row{cursor:pointer;transition:background .1s;}
-  tr.row:hover{background:var(--bg-alt);}
-  .mono{font-family:var(--mono);font-size:12.5px;color:var(--text-secondary);}
+  thead th{position:relative;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);font-weight:600;padding:12px 16px;border-bottom:1px solid var(--line);overflow:hidden;}
+  thead::after{content:'';position:absolute;left:0;top:0;height:1px;width:40%;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:sweep 1.8s ease-out 1;}
+  @keyframes sweep{from{left:-40%;}to{left:100%;}}
+  tbody td{padding:13px 16px;border-bottom:1px solid var(--line-soft);font-size:13.5px;vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr{cursor:pointer;}
+  tbody tr:hover td{background:var(--panel-2);}
+  .cell-name{font-weight:500;}
+  .cell-sub{color:var(--text-faint);font-size:12px;margin-top:2px;}
+  .mono{font-family:var(--mono);font-size:12.5px;color:var(--text-dim);}
+  .empty{padding:60px 20px;text-align:center;color:var(--text-faint);font-size:13.5px;}
 
-  .badge{
-    display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;
-    font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
-  }
-  .badge .d{width:6px;height:6px;border-radius:50%;}
-  .badge.approved{background:var(--ok-dim);color:var(--ok);}
-  .badge.approved .d{background:var(--ok);}
-  .badge.declined{background:var(--bad-dim);color:var(--bad);}
-  .badge.declined .d{background:var(--bad);}
-  .badge.review, .badge.inprogress{background:var(--warn-dim);color:var(--warn);}
-  .badge.review .d, .badge.inprogress .d{background:var(--warn);}
-  .badge.notstarted{background:rgba(255,255,255,.06);color:var(--text-secondary);}
-  .badge.notstarted .d{background:var(--text-secondary);}
+  /* status chip — stamped, not decorated */
+  .chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px;border-radius:5px;border:1px solid transparent;}
+  .chip::before{content:'';width:6px;height:6px;border-radius:50%;}
+  .chip.approved{color:var(--accent);border-color:var(--accent-dim);background:rgba(61,220,151,.08);}
+  .chip.approved::before{background:var(--accent);}
+  .chip.declined{color:var(--danger);border-color:#4a2320;background:rgba(240,102,91,.08);}
+  .chip.declined::before{background:var(--danger);}
+  .chip.review{color:var(--warn);border-color:#4a3a1a;background:rgba(245,185,66,.08);}
+  .chip.review::before{background:var(--warn);}
+  .chip.progress{color:var(--info);border-color:#1f3252;background:rgba(91,156,245,.08);}
+  .chip.progress::before{background:var(--info);}
+  .chip.other{color:var(--text-faint);border-color:var(--line);background:transparent;}
+  .chip.other::before{background:var(--text-faint);}
 
-  .empty{padding:60px 20px;text-align:center;color:var(--text-secondary);font-size:13.5px;}
+  /* ---------- Detail panel ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(6,7,9,.6);opacity:0;pointer-events:none;transition:opacity .18s;z-index:20;}
+  .scrim.open{opacity:1;pointer-events:auto;}
+  .panel{position:fixed;top:0;right:0;height:100vh;width:420px;max-width:92vw;background:var(--panel);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .22s ease;z-index:21;overflow-y:auto;padding:26px;}
+  .panel.open{transform:translateX(0);}
+  .panel h2{font-family:var(--display);font-size:18px;margin:0 0 2px;}
+  .panel .sub{color:var(--text-faint);font-size:12px;font-family:var(--mono);margin-bottom:20px;}
+  .panel-close{all:unset;cursor:pointer;color:var(--text-faint);float:right;font-size:13px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);margin-bottom:5px;}
+  .field .val{font-size:13.5px;}
+  .field .val.mono{font-size:12.5px;}
+  .decision-block{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:12px;font-family:var(--mono);font-size:11.5px;color:var(--text-dim);white-space:pre-wrap;word-break:break-word;max-height:280px;overflow-y:auto;}
+  .panel-actions{display:flex;gap:8px;margin-top:20px;}
 
-  /* New verification modal */
-  .overlay{
-    display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
-    align-items:center;justify-content:center;z-index:100;padding:20px;
-  }
-  .overlay.active{display:flex;}
-  .modal{
-    width:100%;max-width:400px;background:var(--bg-surface);border:1px solid var(--border);
-    border-radius:14px;padding:26px;
-  }
-  .modal h3{font-size:16px;margin-bottom:6px;}
-  .modal p.hint{color:var(--text-secondary);font-size:12.5px;margin-bottom:18px;}
-  .modal-actions{display:flex;gap:10px;margin-top:20px;}
-  .modal-actions .btn{width:auto;flex:1;}
+  /* ---------- New session modal ---------- */
+  .modal-scrim{position:fixed;inset:0;background:rgba(6,7,9,.65);display:none;align-items:center;justify-content:center;z-index:30;}
+  .modal-scrim.open{display:flex;}
+  .modal{width:420px;max-width:92vw;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;}
+  .modal h3{font-family:var(--display);font-size:16px;margin:0 0 18px;}
+  .modal input{width:100%;background:var(--ink);border:1px solid var(--line);border-radius:7px;padding:10px 12px;color:var(--text);font-size:13.5px;font-family:var(--body);margin-bottom:12px;}
+  .modal input:focus{outline:none;border-color:var(--accent);}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:6px;}
+  .modal-error{color:var(--danger);font-size:12.5px;margin:-4px 0 12px;}
 
-  /* Detail drawer */
-  #drawer{
-    display:none;position:fixed;top:0;right:0;bottom:0;width:100%;max-width:420px;
-    background:var(--bg-surface);border-left:1px solid var(--border);z-index:90;
-    overflow-y:auto;padding:24px;
-  }
-  #drawer.active{display:block;}
-  #drawer-close{background:none;border:none;color:var(--text-secondary);font-size:20px;
-    cursor:pointer;float:right;}
-  #drawer h3{font-size:16px;margin:6px 0 2px;}
-  .kv{margin-top:20px;}
-  .kv-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);
-    font-size:13px;gap:12px;}
-  .kv-row .k{color:var(--text-secondary);}
-  .kv-row .v{text-align:right;font-family:var(--mono);font-size:12.5px;word-break:break-word;}
-  pre.raw{
-    background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;
-    padding:12px;font-size:11px;color:var(--text-secondary);overflow-x:auto;margin-top:18px;
-    max-height:280px;
-  }
-
-  .toast{
-    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-    background:#fff;color:#000;padding:11px 18px;border-radius:30px;font-size:13px;
-    font-weight:600;z-index:200;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4);
-  }
+  /* ---------- Login ---------- */
+  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;}
+  .login-card{width:340px;padding:30px;border:1px solid var(--line);border-radius:12px;background:var(--panel);}
+  .login-card .brand{margin-bottom:22px;}
+  .login-card input{width:100%;background:var(--ink);border:1px solid var(--line);border-radius:7px;padding:11px 12px;color:var(--text);font-size:13.5px;margin-bottom:12px;}
+  .login-card input:focus{outline:none;border-color:var(--accent);}
+  .login-card .btn-primary{width:100%;text-align:center;margin-top:4px;}
+  .login-error{color:var(--danger);font-size:12.5px;margin:-4px 0 12px;min-height:1em;}
 </style>
 </head>
 <body>
 
-<!-- ================= SIGN IN ================= -->
-<div id="signin">
-  <div class="signin-card">
-    <div class="brand"><span class="dot"></span>LATCH</div>
-    <div class="signin-sub">Compliance dashboard — admin access only</div>
-
-    <div class="field">
-      <label>Email</label>
-      <input type="email" id="email" autocomplete="username" placeholder="you@vynix.com">
-    </div>
-    <div class="field">
-      <label>Password</label>
-      <input type="password" id="password" autocomplete="current-password" placeholder="••••••••">
-    </div>
-    <button class="btn" id="btn-signin">Sign in</button>
-
-    <div class="divider">OR</div>
-    <button class="btn secondary" id="btn-google">Continue with Google</button>
-
-    <div id="signin-error"></div>
+<!-- ============== LOGIN ============== -->
+<div id="login">
+  <div class="login-card">
+    <div class="brand"><div class="mark"></div><span>Latch</span></div>
+    <div class="login-error" id="loginError"></div>
+    <input type="email" id="loginEmail" placeholder="Admin email" autocomplete="username" />
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" />
+    <button class="btn btn-primary" id="loginBtn">Sign in</button>
   </div>
 </div>
 
-<!-- ================= DASHBOARD ================= -->
+<!-- ============== APP ============== -->
 <div id="app">
-  <header>
-    <div class="header-row">
-      <div class="brand"><span class="dot"></span>LATCH</div>
-      <div class="header-actions">
-        <span class="mono" id="who"></span>
-        <button class="icon-btn" id="btn-signout">Sign out</button>
-      </div>
+  <aside class="side">
+    <div class="brand"><div class="mark"></div><span>Latch</span></div>
+    <nav id="statusNav">
+      <button data-filter="all" class="active">All sessions <span class="count" id="count-all">0</span></button>
+      <button data-filter="In Review">In review <span class="count" id="count-review">0</span></button>
+      <button data-filter="In Progress">In progress <span class="count" id="count-progress">0</span></button>
+      <button data-filter="Approved">Approved <span class="count" id="count-approved">0</span></button>
+      <button data-filter="Declined">Declined <span class="count" id="count-declined">0</span></button>
+      <button data-filter="Not Started">Not started <span class="count" id="count-notstarted">0</span></button>
+    </nav>
+    <div class="side-foot">
+      <span id="whoami"></span>
+      <button id="signOutBtn">Sign out</button>
     </div>
-  </header>
+  </aside>
 
   <main>
-    <div class="page-title">Verifications</div>
-    <div class="page-sub">Live status from Didit — every row below is a real session.</div>
-
-    <div class="stat-row">
-      <div class="stat"><div class="n" id="stat-total">0</div><div class="l">Total</div></div>
-      <div class="stat"><div class="n" id="stat-approved">0</div><div class="l">Approved</div></div>
-      <div class="stat"><div class="n" id="stat-review">0</div><div class="l">In review</div></div>
-      <div class="stat"><div class="n" id="stat-declined">0</div><div class="l">Declined</div></div>
+    <div class="topbar">
+      <div>
+        <h1>Verification sessions</h1>
+        <p>Live status from Didit — updates the moment a webhook lands.</p>
+      </div>
+      <button class="btn btn-primary" id="newSessionBtn">+ New verification</button>
     </div>
 
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Sessions</h2>
-        <button class="btn accent" style="width:auto;padding:9px 16px;" id="btn-new">
-          + New verification
-        </button>
-      </div>
-      <div id="table-wrap">
-        <table id="table">
-          <thead>
-            <tr>
-              <th>Label</th>
-              <th>Status</th>
-              <th>Session</th>
-              <th>Updated</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-        <div class="empty" id="empty" style="display:none;">
-          No verifications yet — start one to see it appear here in real time.
-        </div>
-      </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:26%">Applicant</th>
+            <th style="width:20%">ID number</th>
+            <th style="width:16%">Status</th>
+            <th style="width:20%">Session</th>
+            <th style="width:18%">Updated</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="emptyState" style="display:none;">No sessions yet — start one with "New verification".</div>
     </div>
   </main>
 </div>
 
-<!-- New verification modal -->
-<div class="overlay" id="new-overlay">
+<!-- ============== DETAIL PANEL ============== -->
+<div class="scrim" id="scrim"></div>
+<div class="panel" id="panel">
+  <button class="panel-close" id="panelClose">Close ✕</button>
+  <h2 id="pName">—</h2>
+  <div class="sub" id="pSession">—</div>
+
+  <div class="field"><label>Status</label><div class="val" id="pStatus">—</div></div>
+  <div class="field"><label>ID number</label><div class="val mono" id="pIdNumber">—</div></div>
+  <div class="field"><label>Email</label><div class="val" id="pEmail">—</div></div>
+  <div class="field"><label>Created</label><div class="val mono" id="pCreated">—</div></div>
+  <div class="field"><label>Last updated</label><div class="val mono" id="pUpdated">—</div></div>
+  <div class="field">
+    <label>Decision payload</label>
+    <div class="decision-block" id="pDecision">No decision yet.</div>
+  </div>
+
+  <div class="panel-actions">
+    <button class="btn btn-ghost" id="refreshBtn">Check now</button>
+    <button class="btn btn-ghost" id="copyLinkBtn">Copy verification link</button>
+  </div>
+</div>
+
+<!-- ============== NEW SESSION MODAL ============== -->
+<div class="modal-scrim" id="modalScrim">
   <div class="modal">
     <h3>Start a verification</h3>
-    <p class="hint">Creates a real Didit session and opens the hosted verification flow in a new tab. Status updates here automatically once the user finishes.</p>
-    <div class="field">
-      <label>Label (e.g. user email or ID)</label>
-      <input type="text" id="new-label" placeholder="e.g. jane@company.com">
-    </div>
-    <div class="modal-actions">
-      <button class="btn secondary" id="new-cancel">Cancel</button>
-      <button class="btn accent" id="new-start">Start</button>
+    <div class="modal-error" id="modalError"></div>
+    <input id="newName" placeholder="Full name" />
+    <input id="newEmail" placeholder="Email (optional — sends the link automatically)" />
+    <input id="newIdNumber" placeholder="ID number" />
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+      <button class="btn btn-primary" id="modalCreate">Create session</button>
     </div>
   </div>
 </div>
 
-<!-- Detail drawer -->
-<div id="drawer">
-  <button id="drawer-close">✕</button>
-  <div style="clear:both;"></div>
-  <span class="mono" id="drawer-id"></span>
-  <h3 id="drawer-label"></h3>
-  <div id="drawer-badge"></div>
-  <div class="kv" id="drawer-kv"></div>
-  <pre class="raw" id="drawer-raw"></pre>
-</div>
-
-<div class="toast" id="toast"></div>
-
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
-  getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-  signInWithPopup, GoogleAuthProvider, signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import {
-  getFirestore, collection, doc, getDoc, query, orderBy, onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  getFirestore, collection, doc, getDoc, onSnapshot, query, orderBy
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import {
   getFunctions, httpsCallable
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-functions.js";
 
 // ---- Fill in with your Firebase project config ----
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBQSPwpVbGrdCuOoyitAeWQHIeipj2MgIY",
+  authDomain: "newstart-64c43.firebaseapp.com",
+  databaseURL: "https://newstart-64c43-default-rtdb.firebaseio.com",
+  projectId: "newstart-64c43",
+  storageBucket: "newstart-64c43.firebasestorage.app",
+  messagingSenderId: "941619830061",
+  appId: "1:941619830061:web:de9e0f791eb8f6eacf87a4",
+  measurementId: "G-7064P2RFHN",
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
-const createVerificationSession = httpsCallable(functions, "createVerificationSession");
 
-let sessionsCache = {};
+const createVerificationSession = httpsCallable(functions, "createVerificationSession");
+const refreshSessionDecision = httpsCallable(functions, "refreshSessionDecision");
+
+let sessions = [];
+let activeFilter = "all";
 let unsubscribe = null;
 
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.style.display = "block";
-  setTimeout(() => (t.style.display = "none"), 3200);
-}
-
-function statusClass(status) {
-  const s = (status || "").toLowerCase().replace(/\s+/g, "");
-  if (s === "approved") return "approved";
-  if (s === "declined") return "declined";
-  if (s === "inreview") return "review";
-  if (s === "inprogress") return "inprogress";
-  return "notstarted";
-}
-
-function fmtTime(ts) {
-  if (!ts) return "—";
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleString();
-}
-
-function renderTable() {
-  const tbody = document.getElementById("tbody");
-  const empty = document.getElementById("empty");
-  const rows = Object.values(sessionsCache).sort((a, b) => {
-    const at = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-    const bt = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-    return bt - at;
-  });
-
-  document.getElementById("stat-total").textContent = rows.length;
-  document.getElementById("stat-approved").textContent =
-    rows.filter(r => statusClass(r.status) === "approved").length;
-  document.getElementById("stat-review").textContent =
-    rows.filter(r => ["review", "inprogress"].includes(statusClass(r.status))).length;
-  document.getElementById("stat-declined").textContent =
-    rows.filter(r => statusClass(r.status) === "declined").length;
-
-  if (!rows.length) {
-    tbody.innerHTML = "";
-    empty.style.display = "block";
-    return;
-  }
-  empty.style.display = "none";
-
-  tbody.innerHTML = rows.map(r => {
-    const cls = statusClass(r.status);
-    return `<tr class="row" data-id="${r.sessionId}">
-      <td>${r.label || "—"}</td>
-      <td><span class="badge ${cls}"><span class="d"></span>${r.status || "Unknown"}</span></td>
-      <td class="mono">${(r.sessionId || "").slice(0, 8)}…</td>
-      <td class="mono">${fmtTime(r.updatedAt)}</td>
-    </tr>`;
-  }).join("");
-
-  tbody.querySelectorAll("tr.row").forEach(tr => {
-    tr.addEventListener("click", () => openDrawer(tr.dataset.id));
-  });
-}
-
-function openDrawer(sessionId) {
-  const r = sessionsCache[sessionId];
-  if (!r) return;
-  document.getElementById("drawer-id").textContent = sessionId;
-  document.getElementById("drawer-label").textContent = r.label || "Untitled";
-  const cls = statusClass(r.status);
-  document.getElementById("drawer-badge").innerHTML =
-    `<span class="badge ${cls}"><span class="d"></span>${r.status || "Unknown"}</span>`;
-
-  document.getElementById("drawer-kv").innerHTML = `
-    <div class="kv-row"><span class="k">Session</span><span class="v">${sessionId}</span></div>
-    <div class="kv-row"><span class="k">Created</span><span class="v">${fmtTime(r.createdAt)}</span></div>
-    <div class="kv-row"><span class="k">Updated</span><span class="v">${fmtTime(r.updatedAt)}</span></div>
-  `;
-  document.getElementById("drawer-raw").textContent =
-    r.decision ? JSON.stringify(r.decision, null, 2) : "No decision data yet.";
-  document.getElementById("drawer").classList.add("active");
-}
-document.getElementById("drawer-close").addEventListener("click", () => {
-  document.getElementById("drawer").classList.remove("active");
-});
-
-function listenToSessions() {
-  const q = query(collection(db, "verifications"), orderBy("createdAt", "desc"));
-  unsubscribe = onSnapshot(q, snap => {
-    snap.docChanges().forEach(change => {
-      const data = change.doc.data();
-      if (change.type === "removed") {
-        delete sessionsCache[change.doc.id];
-      } else {
-        sessionsCache[change.doc.id] = data;
-      }
-    });
-    renderTable();
-  }, err => {
-    console.error(err);
-    showToast("Could not load sessions — check Firestore rules / admin access.");
-  });
-}
-
-// ---- New verification modal ----
-document.getElementById("btn-new").addEventListener("click", () => {
-  document.getElementById("new-label").value = "";
-  document.getElementById("new-overlay").classList.add("active");
-});
-document.getElementById("new-cancel").addEventListener("click", () => {
-  document.getElementById("new-overlay").classList.remove("active");
-});
-document.getElementById("new-start").addEventListener("click", async () => {
-  const label = document.getElementById("new-label").value.trim();
-  const btn = document.getElementById("new-start");
-  btn.disabled = true;
-  btn.textContent = "Starting…";
-  try {
-    const res = await createVerificationSession({ label });
-    document.getElementById("new-overlay").classList.remove("active");
-    showToast("Verification session created");
-    window.open(res.data.url, "_blank");
-  } catch (e) {
-    console.error(e);
-    showToast(e.message || "Could not start verification");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Start";
-  }
-});
-
-// ---- Auth ----
-document.getElementById("btn-signin").addEventListener("click", async () => {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  const errEl = document.getElementById("signin-error");
+// ---------------- Auth ----------------
+document.getElementById("loginBtn").onclick = async () => {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const errEl = document.getElementById("loginError");
   errEl.textContent = "";
   try {
     await signInWithEmailAndPassword(auth, email, password);
   } catch (e) {
-    errEl.textContent = "Sign-in failed. Check your email and password.";
+    errEl.textContent = "Couldn't sign in — check the email and password.";
   }
-});
+};
 
-document.getElementById("btn-google").addEventListener("click", async () => {
-  const errEl = document.getElementById("signin-error");
-  errEl.textContent = "";
-  try {
-    await signInWithPopup(auth, new GoogleAuthProvider());
-  } catch (e) {
-    errEl.textContent = "Google sign-in failed.";
-  }
-});
-
-document.getElementById("btn-signout").addEventListener("click", () => signOut(auth));
+document.getElementById("signOutBtn").onclick = () => signOut(auth);
 
 onAuthStateChanged(auth, async (user) => {
-  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-  sessionsCache = {};
-
   if (!user) {
-    document.getElementById("signin").style.display = "flex";
-    document.getElementById("app").style.display = "none";
+    document.getElementById("login").style.display = "flex";
+    document.getElementById("app").classList.remove("ready");
+    if (unsubscribe) unsubscribe();
     return;
   }
-
-  // Confirm this user is on the admins allowlist before showing anything.
   const adminSnap = await getDoc(doc(db, "admins", user.uid));
   if (!adminSnap.exists()) {
-    document.getElementById("signin-error").textContent =
-      "This account isn't an authorized admin.";
+    document.getElementById("loginError").textContent = "This account isn't authorized for Latch.";
     await signOut(auth);
     return;
   }
-
-  document.getElementById("signin").style.display = "none";
-  document.getElementById("app").style.display = "block";
-  document.getElementById("who").textContent = user.email || user.uid;
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").classList.add("ready");
+  document.getElementById("whoami").textContent = user.email;
   listenToSessions();
 });
+
+// ---------------- Live data ----------------
+function listenToSessions() {
+  const q = query(collection(db, "verifications"), orderBy("createdAt", "desc"));
+  unsubscribe = onSnapshot(q, (snap) => {
+    sessions = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderCounts();
+    renderRows();
+  });
+}
+
+function statusClass(status) {
+  if (status === "Approved") return "approved";
+  if (status === "Declined") return "declined";
+  if (status === "In Review") return "review";
+  if (status === "In Progress") return "progress";
+  return "other";
+}
+
+function fmtDate(ts) {
+  if (!ts) return "—";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString("en-ZA", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+function renderCounts() {
+  const counts = { all: sessions.length, review: 0, progress: 0, approved: 0, declined: 0, notstarted: 0 };
+  sessions.forEach((s) => {
+    if (s.status === "In Review") counts.review++;
+    else if (s.status === "In Progress") counts.progress++;
+    else if (s.status === "Approved") counts.approved++;
+    else if (s.status === "Declined") counts.declined++;
+    else if (s.status === "Not Started") counts.notstarted++;
+  });
+  document.getElementById("count-all").textContent = counts.all;
+  document.getElementById("count-review").textContent = counts.review;
+  document.getElementById("count-progress").textContent = counts.progress;
+  document.getElementById("count-approved").textContent = counts.approved;
+  document.getElementById("count-declined").textContent = counts.declined;
+  document.getElementById("count-notstarted").textContent = counts.notstarted;
+}
+
+function renderRows() {
+  const rows = document.getElementById("rows");
+  const filtered = activeFilter === "all" ? sessions : sessions.filter((s) => s.status === activeFilter);
+  document.getElementById("emptyState").style.display = filtered.length ? "none" : "block";
+  rows.innerHTML = filtered
+    .map(
+      (s) => `
+      <tr data-id="${s.id}">
+        <td>
+          <div class="cell-name">${escapeHtml(s.applicantName || "Unnamed")}</div>
+          <div class="cell-sub">${escapeHtml(s.email || "no email on file")}</div>
+        </td>
+        <td class="mono">${escapeHtml(s.idNumberMasked || "—")}</td>
+        <td><span class="chip ${statusClass(s.status)}">${escapeHtml(s.status || "unknown")}</span></td>
+        <td class="mono">${s.id.slice(0, 8)}…</td>
+        <td class="mono">${fmtDate(s.updatedAt)}</td>
+      </tr>`
+    )
+    .join("");
+
+  rows.querySelectorAll("tr").forEach((tr) => {
+    tr.onclick = () => openPanel(tr.dataset.id);
+  });
+}
+
+document.querySelectorAll("#statusNav button").forEach((btn) => {
+  btn.onclick = () => {
+    document.querySelectorAll("#statusNav button").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeFilter = btn.dataset.filter;
+    renderRows();
+  };
+});
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// ---------------- Detail panel ----------------
+let activeSessionId = null;
+
+function openPanel(id) {
+  const s = sessions.find((x) => x.id === id);
+  if (!s) return;
+  activeSessionId = id;
+  document.getElementById("pName").textContent = s.applicantName || "Unnamed applicant";
+  document.getElementById("pSession").textContent = s.id;
+  document.getElementById("pStatus").innerHTML = `<span class="chip ${statusClass(s.status)}">${escapeHtml(s.status || "unknown")}</span>`;
+  document.getElementById("pIdNumber").textContent = s.idNumberMasked || "—";
+  document.getElementById("pEmail").textContent = s.email || "—";
+  document.getElementById("pCreated").textContent = fmtDate(s.createdAt);
+  document.getElementById("pUpdated").textContent = fmtDate(s.updatedAt);
+  document.getElementById("pDecision").textContent = s.decision ? JSON.stringify(s.decision, null, 2) : "No decision yet — status updates here as soon as Didit sends one.";
+  document.getElementById("scrim").classList.add("open");
+  document.getElementById("panel").classList.add("open");
+}
+
+function closePanel() {
+  document.getElementById("scrim").classList.remove("open");
+  document.getElementById("panel").classList.remove("open");
+  activeSessionId = null;
+}
+document.getElementById("panelClose").onclick = closePanel;
+document.getElementById("scrim").onclick = closePanel;
+
+document.getElementById("refreshBtn").onclick = async () => {
+  if (!activeSessionId) return;
+  const btn = document.getElementById("refreshBtn");
+  btn.textContent = "Checking…";
+  try {
+    await refreshSessionDecision({ sessionId: activeSessionId });
+  } catch (e) {
+    console.error(e);
+  }
+  btn.textContent = "Check now";
+};
+
+document.getElementById("copyLinkBtn").onclick = () => {
+  const s = sessions.find((x) => x.id === activeSessionId);
+  if (s?.url) navigator.clipboard.writeText(s.url);
+};
+
+// ---------------- New session modal ----------------
+const modalScrim = document.getElementById("modalScrim");
+document.getElementById("newSessionBtn").onclick = () => {
+  document.getElementById("newName").value = "";
+  document.getElementById("newEmail").value = "";
+  document.getElementById("newIdNumber").value = "";
+  document.getElementById("modalError").textContent = "";
+  modalScrim.classList.add("open");
+};
+document.getElementById("modalCancel").onclick = () => modalScrim.classList.remove("open");
+
+document.getElementById("modalCreate").onclick = async () => {
+  const fullName = document.getElementById("newName").value.trim();
+  const email = document.getElementById("newEmail").value.trim();
+  const idNumber = document.getElementById("newIdNumber").value.trim();
+  const errEl = document.getElementById("modalError");
+  const btn = document.getElementById("modalCreate");
+
+  if (!idNumber) {
+    errEl.textContent = "An ID number is required.";
+    return;
+  }
+  errEl.textContent = "";
+  btn.textContent = "Creating…";
+  try {
+    const result = await createVerificationSession({ fullName, email: email || undefined, idNumber });
+    modalScrim.classList.remove("open");
+    if (result.data?.url) {
+      await navigator.clipboard.writeText(result.data.url);
+    }
+  } catch (e) {
+    errEl.textContent = e.message || "Couldn't create the session.";
+  }
+  btn.textContent = "Create session";
+};
 </script>
 </body>
 </html>
