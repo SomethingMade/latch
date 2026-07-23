@@ -1,0 +1,12 @@
+{
+  "name": "latch-functions",
+  "description": "Latch identity verification backend (Didit integration)",
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "type": "commonjs",
+  "dependencies": {
+    "firebase-admin": "^12.3.0",
+    "firebase-functions": "^5.0.0"
+  },
+  "private": true
+}
